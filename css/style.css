@@ -220,6 +220,7 @@ html[data-theme="light"] .icon-moon { display: block; }
   min-height: calc(100vh - 150px);
   padding: 20px 12px 90px;
   gap: 10px;
+  touch-action:pan-y pinch-zoom
 }
 
 .stage {
