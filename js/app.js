@@ -288,7 +288,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ============================================================
-   ZOOM + PAN + SWIPE
+   ZOOM + PAN + SWIPE (focal-point zoom - anchors to pointer/pinch, not top-left)
    ============================================================ */
 const zoomEl = document.getElementById("stageZoom");
 const zoomState = { scale: 1, x: 0, y: 0 };
@@ -305,16 +305,39 @@ function clampPan() {
   zoomState.x = Math.min(maxX, Math.max(-maxX, zoomState.x));
   zoomState.y = Math.min(maxY, Math.max(-maxY, zoomState.y));
 }
-function setZoom(scale, animate = true) {
-  zoomState.scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale));
-  if (zoomState.scale === 1) { zoomState.x = 0; zoomState.y = 0; }
+// Zooms to newScale while keeping the content point under (clientX, clientY)
+// visually fixed in place - this is the part a plain setZoom(scale) can't do.
+function zoomAt(newScale, clientX, clientY, animate = false) {
+  const rect = el.stage.getBoundingClientRect();
+  const s0 = zoomState.scale;
+  const s1 = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newScale));
+  if (s1 === s0) return;
+  // position of the anchor point relative to the stage's own center
+  // (transform-origin is centered, so this is the frame our math must use)
+  const localX = clientX - rect.left - rect.width / 2;
+  const localY = clientY - rect.top - rect.height / 2;
+  const ratio = s1 / s0;
+  zoomState.x = localX * (1 - ratio) + zoomState.x * ratio;
+  zoomState.y = localY * (1 - ratio) + zoomState.y * ratio;
+  zoomState.scale = s1;
+  if (s1 === 1) { zoomState.x = 0; zoomState.y = 0; }
   clampPan();
   applyZoom(animate);
 }
-function resetZoom() { setZoom(1); }
+function resetZoom() { zoomState.scale = 1; zoomState.x = 0; zoomState.y = 0; applyZoom(true); }
 
-document.getElementById("zoomInBtn").addEventListener("click", () => setZoom(zoomState.scale + 0.6));
-document.getElementById("zoomOutBtn").addEventListener("click", () => setZoom(zoomState.scale - 0.6));
+function stageCenter() {
+  const rect = el.stage.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+document.getElementById("zoomInBtn").addEventListener("click", () => {
+  const c = stageCenter();
+  zoomAt(zoomState.scale + 0.6, c.x, c.y, true);
+});
+document.getElementById("zoomOutBtn").addEventListener("click", () => {
+  const c = stageCenter();
+  zoomAt(zoomState.scale - 0.6, c.x, c.y, true);
+});
 document.getElementById("zoomResetBtn").addEventListener("click", resetZoom);
 
 // Reset zoom whenever the page actually changes
@@ -330,6 +353,9 @@ goToPage = function (...args) { resetZoom(); return _goToPage(...args); };
   function dist(t1, t2) {
     return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
   }
+  function midpoint(t1, t2) {
+    return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+  }
 
   el.stage.addEventListener("touchstart", (e) => {
     if (e.touches.length === 2) {
@@ -338,16 +364,17 @@ goToPage = function (...args) { resetZoom(); return _goToPage(...args); };
       pinchStartScale = zoomState.scale;
     } else if (e.touches.length === 1) {
       const now = Date.now();
+      const t = e.touches[0];
       if (now - lastTapTime < 300) {
-        setZoom(zoomState.scale > 1 ? 1 : 2.2);
+        zoomAt(zoomState.scale > 1 ? 1 : 2.2, t.clientX, t.clientY, true);
         mode = null;
       } else if (zoomState.scale > 1) {
         mode = "pan";
-        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startX = t.clientX; startY = t.clientY;
         startPanX = zoomState.x; startPanY = zoomState.y;
       } else {
         mode = "swipe";
-        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startX = t.clientX; startY = t.clientY;
       }
       lastTapTime = now;
     }
@@ -355,8 +382,12 @@ goToPage = function (...args) { resetZoom(); return _goToPage(...args); };
 
   el.stage.addEventListener("touchmove", (e) => {
     if (mode === "pinch" && e.touches.length === 2) {
+      // Recompute the anchor from the CURRENT finger midpoint every frame,
+      // so the image stays glued under your fingers as they move, not just
+      // at the spot they started the pinch.
       const newDist = dist(e.touches[0], e.touches[1]);
-      setZoom(pinchStartScale * (newDist / pinchStartDist), false);
+      const mid = midpoint(e.touches[0], e.touches[1]);
+      zoomAt(pinchStartScale * (newDist / pinchStartDist), mid.x, mid.y, false);
     } else if (mode === "pan" && e.touches.length === 1) {
       zoomState.x = startPanX + (e.touches[0].clientX - startX);
       zoomState.y = startPanY + (e.touches[0].clientY - startY);
@@ -379,14 +410,14 @@ goToPage = function (...args) { resetZoom(); return _goToPage(...args); };
     mode = null;
   }, { passive: true });
 
-  // Desktop: mouse wheel to zoom, double-click to zoom
+  // Desktop: mouse wheel zooms toward the cursor position, double-click zooms toward click point
   el.stage.addEventListener("wheel", (e) => {
     e.preventDefault();
-    setZoom(zoomState.scale - e.deltaY * 0.0025, false);
+    zoomAt(zoomState.scale - e.deltaY * 0.0025, e.clientX, e.clientY, false);
   }, { passive: false });
 
-  el.stage.addEventListener("dblclick", () => {
-    setZoom(zoomState.scale > 1 ? 1 : 2.2);
+  el.stage.addEventListener("dblclick", (e) => {
+    zoomAt(zoomState.scale > 1 ? 1 : 2.2, e.clientX, e.clientY, true);
   });
 })();
 
