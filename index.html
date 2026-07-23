@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Admas University Mekanisa Campus 2026 Yearbook</title>
+<meta name="description" content="Digital graduation yearbook - Admas University Mekanisa Campus 2026" />
+<meta name="theme-color" content="#0B1220" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E" />
+<link rel="manifest" href="manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="site-header" id="siteHeader">
+  <div class="header-glass">
+    <button class="icon-btn" id="thumbsToggle" aria-label="Open page thumbnails" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span class="icon-btn-label">Pages</span>
+    </button>
+
+    <div class="header-title">
+      <span class="cap-emoji" aria-hidden="true">🎓</span>
+      <div class="title-text">
+        <strong>Admas University</strong>
+        <span>Mekanisa Campus &middot; 2026 Yearbook</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn" id="bookmarksToggle" aria-label="Open bookmarks" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 3.75h12a.75.75 0 0 1 .75.75v16.2c0 .58-.62.95-1.13.68L12 17.1l-5.62 4.28c-.5.27-1.13-.1-1.13-.68V4.5A.75.75 0 0 1 6 3.75Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span class="icon-btn-label">Saved</span>
+      </button>
+      <button class="icon-btn" id="darkToggle" aria-label="Toggle dark mode">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Controls row: category / department / page jump -->
+  <div class="controls-glass">
+    <div class="control-group">
+      <label for="categorySelect">Category</label>
+      <select id="categorySelect">
+        <option value="">All pages</option>
+        <option value="degree">Degree</option>
+        <option value="tevt">TEVT / Diploma</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="departmentSelect">Department</label>
+      <select id="departmentSelect" disabled>
+        <option value="">Select category first</option>
+      </select>
+    </div>
+
+    <form class="control-group page-jump-form" id="pageJumpForm">
+      <label for="pageJumpInput">Go to page</label>
+      <input type="number" id="pageJumpInput" min="1" max="307" placeholder="e.g. 150" inputmode="numeric" />
+    </form>
+  </div>
+</header>
+
+<!-- ================= MAIN VIEWER ================= -->
+<main class="viewer" id="viewer">
+
+  <button class="nav-arrow nav-arrow-left" id="prevBtn" aria-label="Previous page">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="stage" id="stage">
+    <div class="stage-loading" id="stageLoading" aria-hidden="true">
+      <div class="spinner"></div>
+    </div>
+    <img class="page-layer page-layer-a" id="pageA" alt="" draggable="false" />
+    <img class="page-layer page-layer-b" id="pageB" alt="" draggable="false" />
+
+    <button class="bookmark-fab" id="bookmarkFab" aria-label="Bookmark this page" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 3.75h12a.75.75 0 0 1 .75.75v16.2c0 .58-.62.95-1.13.68L12 17.1l-5.62 4.28c-.5.27-1.13-.1-1.13-.68V4.5A.75.75 0 0 1 6 3.75Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <button class="nav-arrow nav-arrow-right" id="nextBtn" aria-label="Next page">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <!-- Page counter medallion -->
+  <div class="medallion" id="pageMedallion">
+    <div class="medallion-ribbon medallion-ribbon-left"></div>
+    <div class="medallion-ribbon medallion-ribbon-right"></div>
+    <div class="medallion-face">
+      <span id="currentPageLabel">1</span>
+      <em>/ <span id="totalPageLabel">307</span></em>
+    </div>
+  </div>
+</main>
+
+<!-- ================= THUMBNAIL SIDEBAR ================= -->
+<aside class="side-panel" id="thumbsPanel" aria-hidden="true">
+  <div class="side-panel-header">
+    <h2>All Pages</h2>
+    <button class="icon-btn side-panel-close" data-close="thumbsPanel" aria-label="Close pages panel">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="thumb-grid" id="thumbGrid"></div>
+</aside>
+
+<!-- ================= BOOKMARK SIDEBAR ================= -->
+<aside class="side-panel" id="bookmarksPanel" aria-hidden="true">
+  <div class="side-panel-header">
+    <h2>Saved Pages</h2>
+    <button class="icon-btn side-panel-close" data-close="bookmarksPanel" aria-label="Close saved pages panel">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="bookmark-list" id="bookmarkList">
+    <p class="empty-state">No saved pages yet. Tap the ribbon icon on any page to save it here.</p>
+  </div>
+</aside>
+
+<div class="scrim" id="scrim"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
