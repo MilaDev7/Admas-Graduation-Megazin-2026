@@ -582,6 +582,21 @@ html[data-theme="light"] .icon-moon { display: block; }
   background: rgba(201,162,39,0.35); border-radius: 3px;
 }
 
+
 @media (max-width: 480px) {
   .medallion-face { padding: 7px 16px; font-size: 0.9rem; }
 }
+
+.site-footer {
+  text-align: center;
+  padding: 18px 16px 22px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.site-footer strong {
+  color: var(--gold-500);
+  font-weight: 700;
+}
+
