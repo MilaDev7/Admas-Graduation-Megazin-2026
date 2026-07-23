@@ -350,15 +350,6 @@ function stageCenter() {
   const rect = el.stage.getBoundingClientRect();
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
-document.getElementById("zoomInBtn").addEventListener("click", () => {
-  const c = stageCenter();
-  zoomAt(zoomState.scale + 0.6, c.x, c.y, true);
-});
-document.getElementById("zoomOutBtn").addEventListener("click", () => {
-  const c = stageCenter();
-  zoomAt(zoomState.scale - 0.6, c.x, c.y, true);
-});
-document.getElementById("zoomResetBtn").addEventListener("click", resetZoom);
 
 // Reset zoom whenever the page actually changes
 const _goToPage = goToPage;
