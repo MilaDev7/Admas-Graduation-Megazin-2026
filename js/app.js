@@ -288,28 +288,106 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ============================================================
-   TOUCH SWIPE
+   ZOOM + PAN + SWIPE
    ============================================================ */
-(function enableSwipe() {
-  let startX = 0, startY = 0, tracking = false;
-  const THRESHOLD = 45;
+const zoomEl = document.getElementById("stageZoom");
+const zoomState = { scale: 1, x: 0, y: 0 };
+const MIN_ZOOM = 1, MAX_ZOOM = 4;
+
+function applyZoom(animate) {
+  zoomEl.classList.toggle("is-panning", !animate);
+  zoomEl.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
+}
+function clampPan() {
+  const rect = el.stage.getBoundingClientRect();
+  const maxX = (rect.width * (zoomState.scale - 1)) / 2;
+  const maxY = (rect.height * (zoomState.scale - 1)) / 2;
+  zoomState.x = Math.min(maxX, Math.max(-maxX, zoomState.x));
+  zoomState.y = Math.min(maxY, Math.max(-maxY, zoomState.y));
+}
+function setZoom(scale, animate = true) {
+  zoomState.scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale));
+  if (zoomState.scale === 1) { zoomState.x = 0; zoomState.y = 0; }
+  clampPan();
+  applyZoom(animate);
+}
+function resetZoom() { setZoom(1); }
+
+document.getElementById("zoomInBtn").addEventListener("click", () => setZoom(zoomState.scale + 0.6));
+document.getElementById("zoomOutBtn").addEventListener("click", () => setZoom(zoomState.scale - 0.6));
+document.getElementById("zoomResetBtn").addEventListener("click", resetZoom);
+
+// Reset zoom whenever the page actually changes
+const _goToPage = goToPage;
+goToPage = function (...args) { resetZoom(); return _goToPage(...args); };
+
+(function enableTouchAndWheel() {
+  let mode = null; // "swipe" | "pan" | "pinch"
+  let startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+  let pinchStartDist = 0, pinchStartScale = 1;
+  let lastTapTime = 0;
+
+  function dist(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
 
   el.stage.addEventListener("touchstart", (e) => {
-    const t = e.touches[0];
-    startX = t.clientX; startY = t.clientY; tracking = true;
+    if (e.touches.length === 2) {
+      mode = "pinch";
+      pinchStartDist = dist(e.touches[0], e.touches[1]);
+      pinchStartScale = zoomState.scale;
+    } else if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTapTime < 300) {
+        setZoom(zoomState.scale > 1 ? 1 : 2.2);
+        mode = null;
+      } else if (zoomState.scale > 1) {
+        mode = "pan";
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startPanX = zoomState.x; startPanY = zoomState.y;
+      } else {
+        mode = "swipe";
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      }
+      lastTapTime = now;
+    }
+  }, { passive: true });
+
+  el.stage.addEventListener("touchmove", (e) => {
+    if (mode === "pinch" && e.touches.length === 2) {
+      const newDist = dist(e.touches[0], e.touches[1]);
+      setZoom(pinchStartScale * (newDist / pinchStartDist), false);
+    } else if (mode === "pan" && e.touches.length === 1) {
+      zoomState.x = startPanX + (e.touches[0].clientX - startX);
+      zoomState.y = startPanY + (e.touches[0].clientY - startY);
+      clampPan();
+      applyZoom(false);
+    }
   }, { passive: true });
 
   el.stage.addEventListener("touchend", (e) => {
-    if (!tracking) return;
-    tracking = false;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
-    if (Math.abs(dx) > THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      if (dx < 0) goToPage(currentPage + 1, { direction: "next" });
-      else goToPage(currentPage - 1, { direction: "prev" });
+    if (mode === "swipe") {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      const THRESHOLD = 45;
+      if (Math.abs(dx) > THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        if (dx < 0) goToPage(currentPage + 1, { direction: "next" });
+        else goToPage(currentPage - 1, { direction: "prev" });
+      }
     }
+    mode = null;
   }, { passive: true });
+
+  // Desktop: mouse wheel to zoom, double-click to zoom
+  el.stage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    setZoom(zoomState.scale - e.deltaY * 0.0025, false);
+  }, { passive: false });
+
+  el.stage.addEventListener("dblclick", () => {
+    setZoom(zoomState.scale > 1 ? 1 : 2.2);
+  });
 })();
 
 /* ============================================================
