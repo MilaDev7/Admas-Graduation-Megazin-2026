@@ -171,30 +171,50 @@ function warmNeighbors(n) {
   for (let i = n - PRELOAD_RADIUS; i <= n + PRELOAD_RADIUS; i++) preloadPage(i);
 }
 
+let transitionCounter = 0;
+
 function renderPage(n, direction) {
-  // direction: "next" | "prev" | null (no animation, e.g. first load / jump)
   const incoming = activeLayer === "a" ? el.pageB : el.pageA;
   const outgoing = activeLayer === "a" ? el.pageA : el.pageB;
 
   el.stageLoading.classList.remove("is-hidden");
 
   const src = pageImg(n);
-  incoming.classList.remove("is-active", "enter-from-right", "enter-from-left", "exit-to-left", "exit-to-right");
+  const allClasses = ["is-active", "enter-from-right", "enter-from-left", "exit-to-left", "exit-to-right",
+    "zoom-enter", "zoom-exit", "slide-up-enter", "slide-up-exit"];
+  incoming.classList.remove(...allClasses);
+  outgoing.classList.remove(...allClasses);
   incoming.alt = `Yearbook page ${n} of ${TOTAL_PAGES}`;
+
+  transitionCounter++;
+  const useZoom = transitionCounter % 3 === 0;
 
   const finish = () => {
     el.stageLoading.classList.add("is-hidden");
+
     if (direction === "next") {
-      incoming.classList.add("enter-from-right");
-      outgoing.classList.add("exit-to-left");
+      if (useZoom) {
+        incoming.classList.add("zoom-enter");
+        outgoing.classList.add("zoom-exit");
+      } else {
+        incoming.classList.add("enter-from-right");
+        outgoing.classList.add("exit-to-left");
+      }
     } else if (direction === "prev") {
-      incoming.classList.add("enter-from-left");
-      outgoing.classList.add("exit-to-right");
+      if (useZoom) {
+        incoming.classList.add("zoom-enter");
+        outgoing.classList.add("zoom-exit");
+      } else {
+        incoming.classList.add("enter-from-left");
+        outgoing.classList.add("exit-to-right");
+      }
+    } else {
+      incoming.classList.add("zoom-enter");
     }
-    // force reflow so the enter-from-* transform is applied before transitioning to active
+
     void incoming.offsetWidth;
     incoming.classList.add("is-active");
-    incoming.classList.remove("enter-from-right", "enter-from-left");
+    incoming.classList.remove("enter-from-right", "enter-from-left", "zoom-enter", "slide-up-enter");
     outgoing.classList.remove("is-active");
 
     activeLayer = activeLayer === "a" ? "b" : "a";
